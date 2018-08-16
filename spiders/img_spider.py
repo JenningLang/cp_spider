@@ -6,6 +6,8 @@ import random
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
+from config import GROUP_INFO_URL, INNER_GROUP_INFO_URL
+
 
 error_logger = logging.getLogger("request_logger")
 formatter = logging.Formatter(
@@ -16,9 +18,6 @@ timed_rotating_file_handler.setFormatter(formatter)  # 可以通过setFormatter�
 timed_rotating_file_handler.suffix = "%Y%m%d.log"
 error_logger.addHandler(timed_rotating_file_handler)
 error_logger.setLevel(logging.DEBUG)
-
-group_info_url = "https://c1.acgnavi.com:8441/index?index=mainindex&isv=0&mode=21"
-sub_group_info_url = "https://c1.acgnavi.com:8441/index?index={0}&mode=21"
 
 
 def get_proxy():
@@ -56,24 +55,15 @@ def get_and_save_image(url, file_path):
 
 
 def get_and_save_group_info():
-    """
-    1. Get group info and compare it with ones in ./data/urls/group_index
-    2. if 1 has diff, save it in ./data/urls/group_index
-    3. return the full index
-    :return: [index]
-    """
-    global group_info_url
-    global proxy
-    db = dbm.open('group_names', 'c')
+    db = dbm.open("group_names", "c")
     res = requests.get(
-        group_info_url,
+        GROUP_INFO_URL,
         verify=False,
         proxies={"http": "http://{}".format(proxy)}
     )
     indexes = res.json()["indexes"]
     r_val = dict(
-        [item["index"], item["des"]]
-        for item in indexes
+        (item["index"], item["des"]) for item in indexes
     )
     with open("./data/urls/group_index", "r") as gi_file:
         index = gi_file.readline().replace("\n", "")
@@ -134,15 +124,15 @@ def get_and_save_details(sub_group_index, forced=False):
         get_and_save_image(image_url, image_path)
 
 
-# get_and_save_image(
-#     "https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG",
-#     "test.jpg"
-# )
+def main():
+    group_info = get_and_save_group_info()
+    cnt = 1
+    for item in group_info:
+        print(cnt, " ::: ", item, " ::: ", group_info[item])
+        error_logger.info("{0} ::: {1} ::: {2}".format(cnt, item, group_info[item]))
+        get_and_save_details(item)
+        cnt += 1
 
-group_info = get_and_save_group_info()
-cnt = 1
-for item in group_info:
-    print(cnt, " ::: ", item, " ::: ", group_info[item])
-    error_logger.info("{0} ::: {1} ::: {2}".format(cnt, item, group_info[item]))
-    get_and_save_details(item)
-    cnt += 1
+
+if __name__ == "__main__":
+    main()

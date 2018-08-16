@@ -1,3 +1,7 @@
 .DS_Store
-.idea
+.idea/
 *.db
+.idea/*.*
+*.swp
+__pycache__/
+

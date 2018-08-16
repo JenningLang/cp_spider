@@ -1,0 +1,7 @@
+requests==2.19.1
+oss2==2.5.0
+APScheduler==3.2.0
+werkzeug==0.11.15
+Flask==0.12
+redis==2.10.6
+lxml==4.2.4
