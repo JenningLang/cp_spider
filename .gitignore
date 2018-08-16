@@ -4,4 +4,5 @@
 .idea/*.*
 *.swp
 __pycache__/
+config.py
 
