@@ -5,4 +5,5 @@
 *.swp
 __pycache__/
 config.py
-
+data/logs/
+*.log

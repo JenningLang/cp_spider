@@ -27,10 +27,11 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
     {
         "id": "18010142",
         "group_name": "[踊るねこ人間] MISA NOTE",
-        "surface_origin_url": "",
-        "surface_nos_key": "",
-        "surface_nos_url": "",
-        "surface_local_file_path": "",
+        // surface
+        "origin_url": "",
+        "nos_key": "",
+        "nos_url": "",
+        "local_file_path": "",
         "finish": true  // false
     },
     // ...
@@ -65,7 +66,8 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
         "nos_url": "https://c.acgnavi.com/tuiguangcos/tSTAY_003.JPG",
         "local_file_path": "/a/b/c/tSTAY_003.JPG",
         "file_name": "tSTAY_003.JPG",
-        "add_timestamp": 1234567890123
+        "add_timestamp": 1234567890123,
+        "group_id": "18010142"
     }, 
     // ...
 ]

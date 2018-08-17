@@ -1,137 +1,125 @@
-import requests
+from concurrent.futures import ThreadPoolExecutor
 import dbm
-import os
-import time
+import json
 import random
-import logging
-from logging.handlers import TimedRotatingFileHandler
+import os
+import sys
+import time
+import traceback
 
+CURRENT_PATH = os.path.split(os.path.realpath(__file__))[0]
+sys.path.append(os.path.join(CURRENT_PATH, "../"))
+
+from config import DB_PATH
 from config import GROUP_INFO_URL, INNER_GROUP_INFO_URL
+from util import get_redis_cli
+from util import meta_logger
+from util import proxy_request_get
 
 
-error_logger = logging.getLogger("request_logger")
-formatter = logging.Formatter(
-    '%(asctime)s level-%(levelname)-8s: %(message)s'
-)
-timed_rotating_file_handler = TimedRotatingFileHandler("./error_log", 'midnight')
-timed_rotating_file_handler.setFormatter(formatter)  # 可以通过setFormatter指定输出格式
-timed_rotating_file_handler.suffix = "%Y%m%d.log"
-error_logger.addHandler(timed_rotating_file_handler)
-error_logger.setLevel(logging.DEBUG)
+def spide_group_meta():
+    """
+    获取全部图片组 meta 信息，并将其存入数据库
+    """
+    meta_logger.info("下载图片组信息")
+    redis_cli = get_redis_cli()
 
+    origin_meta_str = redis_cli.get("group:meta")
+    origin_meta_str = b"[]" if origin_meta_str is None else origin_meta_str
+    origin_meta = json.loads(origin_meta_str.decode("utf8"))  # 原 meta 数据
+    meta_logger.info("原组长: {}".format(len(origin_meta)))
+    origin_group_index_set = {meta["id"] for meta in origin_meta}  # 原来所有图片组的 id 集合
 
-def get_proxy():
-    return requests.get("http://127.0.0.1:5010/get/").content
-
-
-proxy = get_proxy()
-
-
-def get_and_save_image(url, file_path):
-    global proxy
     try:
-        res = requests.get(
-            url,
-            proxies={"http": "http://{}".format(proxy)}
-        )
-        p_file = open(file_path, 'wb')
-        p_file.write(res.content)
-        p_file.close()
-    except Exception as e:
-        print("ERROR ::: {0} ::: {1} ::: {2}".format(url, file_path, repr(e)))
-        error_logger.info("ERROR ::: {0} ::: {1} ::: {2}".format(url, file_path, repr(e)))
-        try:
-            proxy = get_proxy()
-            res = requests.get(
-                url,
-                proxies={"http": "http://{}".format(proxy)}
-            )
-            p_file = open(file_path, 'wb')
-            p_file.write(res.content)
-            p_file.close()
-        except Exception as e:
-            print("ERROR ::: {0} ::: {1} ::: {2}".format(url, file_path, repr(e)))
-            error_logger.info("ERROR ::: {0} ::: {1} ::: {2}".format(url, file_path, repr(e)))
-
-
-def get_and_save_group_info():
-    db = dbm.open("group_names", "c")
-    res = requests.get(
-        GROUP_INFO_URL,
-        verify=False,
-        proxies={"http": "http://{}".format(proxy)}
-    )
-    indexes = res.json()["indexes"]
-    r_val = dict(
-        (item["index"], item["des"]) for item in indexes
-    )
-    with open("./data/urls/group_index", "r") as gi_file:
-        index = gi_file.readline().replace("\n", "")
-        while index:
-            if index not in r_val:
-                try:
-                    name_temp = db[index]
-                except:
-                    name_temp = "???{0}".format(random.random())
-                r_val[index] = name_temp
-            index = gi_file.readline().replace("\n", "")
-
-    with open("./data/urls/group_index", "w") as gi_file:
-        for item in r_val:
-            gi_file.write("{0}\n".format(item))
-            db[item] = r_val[item]
-        db.close()
-    return r_val
-
-
-def get_and_save_details(sub_group_index, forced=False):
-    db = dbm.open('group_names', 'c')
-    name = db[str(sub_group_index)].decode("utf-8")
-    db.close()
-    file_path = "./data/image/{0}".format(name)
-    if os.path.exists(file_path):
-        if not forced:
-            print("数据已经存在? {0} ::: {1} ::: {2}".format(
-                sub_group_index, name, file_path
-            ))
-            return
-    try:
-        os.mkdir(file_path)
+        remote_meta = json.loads(
+            proxy_request_get(GROUP_INFO_URL).content.decode("utf8")
+        )["indexes"]
     except:
-        pass
+        meta_logger.error('退出: 下载"全部"图片组信息失败')
+        meta_logger.error(traceback.format_exc())
+    else:  # 爬取成功
+        counter = 0
+        for meta in remote_meta:
+            if meta["index"] not in origin_group_index_set:  # 不在原来的数据里，添加
+                new_meta_unit = {
+                    "id": meta["index"],
+                    "group_name": meta["des"],
+                    "origin_url": meta["url"],
+                    "nos_key": "",
+                    "nos_url": "",
+                    "local_file_path": "",
+                    "finish": False
+                }
+                origin_meta = [new_meta_unit] + origin_meta
+                counter += 1
+        redis_cli.set("group:meta", json.dumps(origin_meta).encode("utf8"))
+        meta_logger.info("退出: 新增图片组信息 {} 组".format(counter))
+    return origin_meta
 
-    global sub_group_info_url
-    global proxy
-    this_group_url = sub_group_info_url.format(sub_group_index)
-    res = requests.get(
-        this_group_url,
-        verify=False,
-        proxies={"http": "http://{}".format(proxy)}
-    )
-    indexes = res.json()["info"]
-    cnt = 1
-    for item in indexes:
-        print("ITEM: ", cnt)
-        error_logger.info("ITEM: {0}".format(cnt))
-        cnt += 1
-        sleep_time = 0.1 + 0.1 * random.random()
-        time.sleep(sleep_time)
-        image_url = str(item["url"])
-        image_name = image_url
-        while image_name.find("/") != -1:
-            image_name = image_name[image_name.find("/") + 1:]
-        image_path = file_path + "/{0}".format(image_name)
-        get_and_save_image(image_url, image_path)
+
+def single_spide_group(group_id):
+    time.sleep(random.random() / 10)
+    meta_logger.info("{}: 图片组信息下载".format(group_id))
+    inner_group_info_url = INNER_GROUP_INFO_URL.format(index=group_id)
+
+    redis_cli = get_redis_cli()
+    group_key = "group:{}".format(group_id)
+
+    origin_group_info_str = redis_cli.get(group_key)
+    origin_group_info_str = b"[]" if origin_group_info_str is None else origin_group_info_str
+    origin_group_info = json.loads(origin_group_info_str.decode("utf8"))  # 原 meta 数据
+    meta_logger.info("{}: 原图片数量: {}".format(group_id, len(origin_group_info)))
+    origin_img_index_set = {img_info["id"] for img_info in origin_group_info}  # 原来组内所有图片的 id
+
+    try:
+        remote_group_info = json.loads(
+            proxy_request_get(inner_group_info_url).content.decode("utf8")
+        )["info"]
+    except:
+        meta_logger.error("{}: 退出: 下载图片组信息失败".format(group_id))
+        meta_logger.error(traceback.format_exc())
+        return False
+    else:  # 爬取成功
+        counter = 0
+        for group_info in remote_group_info:
+            if group_info["id"] not in origin_img_index_set:  # 不在原来的数据里，添加
+                new_image_info = {
+                    "id": group_info["id"],
+                    "origin_url": group_info["url"],
+                    "nos_key": "",
+                    "nos_url": "",
+                    "local_file_path": "",
+                    "file_name": str(group_info["url"]).split("/")[-1],
+                    "finish": False
+                }
+                origin_group_info = [new_image_info] + origin_group_info
+                counter += 1
+        redis_cli.set(group_key, json.dumps(origin_group_info).encode("utf8"))
+        meta_logger.info("{}: 退出: 新增图片 {} 张".format(group_id, counter))
+    return True
+
+
+def spide_group(group_meta):
+    """
+    多线程 (16) 爬取图片组信息，并将其存入数据库
+    :return:
+    """
+    meta_logger.info("多线程爬取图片组信息，任务共: {}".format(len(group_meta)))
+    success_counter = 0
+    fail_counter = 0
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        for status in executor.map(single_spide_group, iter(meta["id"] for meta in group_meta)):
+            if status:
+                success_counter += 1
+            else:
+                fail_counter += 1
+    meta_logger.info("多线程爬取图片组信息，成功-{}，失败-{}".format(success_counter, fail_counter))
 
 
 def main():
-    group_info = get_and_save_group_info()
-    cnt = 1
-    for item in group_info:
-        print(cnt, " ::: ", item, " ::: ", group_info[item])
-        error_logger.info("{0} ::: {1} ::: {2}".format(cnt, item, group_info[item]))
-        get_and_save_details(item)
-        cnt += 1
+    group_meta = spide_group_meta()
+    spide_group(group_meta)
+    # modify_meta_finish()
 
 
 if __name__ == "__main__":
