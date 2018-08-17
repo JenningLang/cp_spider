@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-import dbm
+import datetime
 import json
 import random
 import os
@@ -10,7 +10,6 @@ import traceback
 CURRENT_PATH = os.path.split(os.path.realpath(__file__))[0]
 sys.path.append(os.path.join(CURRENT_PATH, "../"))
 
-from config import DB_PATH
 from config import GROUP_INFO_URL, INNER_GROUP_INFO_URL
 from util import get_redis_cli
 from util import meta_logger
@@ -124,3 +123,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    while True:
+        if datetime.datetime.now().hour == 3:
+            if datetime.datetime.now().minute <= 5:
+                main()
+        time.sleep(5 * 60 - 5)
+
