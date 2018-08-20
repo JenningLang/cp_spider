@@ -48,8 +48,7 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
         "nos_key": "key",
         "nos_url": "https://c.acgnavi.com/tuiguangcos/tSTAY_003.JPG",
         "local_file_path": "/a/b/c/tSTAY_003.JPG",
-        "file_name": "tSTAY_003.JPG",
-        "finish": true  // false
+        "file_name": "tSTAY_003.JPG"
     }, 
     // ...
 ]

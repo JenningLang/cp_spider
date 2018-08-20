@@ -55,7 +55,7 @@ def _simple_proxy_request_get(*args, **kwargs):
     kwargs["proxies"] = kwargs.get(
         "proxies", {"http": "http://{}".format(proxy)}
     )
-    kwargs["timeout"] = kwargs.get("timeout", 12)
+    kwargs["timeout"] = kwargs.get("timeout", 30)
     return proxy, requests.get(*args, **kwargs)
 
 

@@ -88,8 +88,7 @@ def single_spide_group(group_id):
                     "nos_key": "",
                     "nos_url": "",
                     "local_file_path": "",
-                    "file_name": str(group_info["url"]).split("/")[-1],
-                    "finish": False
+                    "file_name": str(group_info["url"]).split("/")[-1]
                 }
                 origin_group_info = [new_image_info] + origin_group_info
                 counter += 1
