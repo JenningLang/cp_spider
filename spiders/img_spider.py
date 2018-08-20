@@ -1,10 +1,13 @@
 from concurrent.futures import ThreadPoolExecutor
-import datetime
 import os
+import sys
 import time
 import json
 import traceback
 from threading import Lock
+
+CURRENT_PATH = os.path.split(os.path.realpath(__file__))[0]
+sys.path.append(os.path.join(CURRENT_PATH, "../"))
 
 from config import CURRENT_PATH, META_KEY, KEY_TEMPLATE
 from oss import put_image
