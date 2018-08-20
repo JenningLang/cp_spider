@@ -20,7 +20,7 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
 
 ## 2. 数据结构
 
-### key: meta
+### group:meta
 
 ```json
 [
@@ -32,18 +32,18 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
         "nos_key": "",
         "nos_url": "",
         "local_file_path": "",
-        "finish": true  // false
     },
     // ...
 ]
 ```
 
-### key: 18010142
+### group:18010142
 
 ```json
 [
     {
         "id": "1234567888",
+        "group_id": "",
         "origin_url": "https://c.acgnavi.com/tuiguangcos/tSTAY_003.JPG",
         "nos_key": "key",
         "nos_url": "https://c.acgnavi.com/tuiguangcos/tSTAY_003.JPG",
@@ -55,7 +55,7 @@ https://c.acgnavi.com/tuiguangacg/tSTAY_4090EDFF_0000.JPG
 ]
 ```
 
-### key: favor
+### group:favor  <- store it in dbm
 
 ```json
 [

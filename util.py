@@ -75,7 +75,7 @@ def proxy_request_get(*args, **kwargs):
     return _simple_proxy_request_get(*args, **kwargs)[1]
 
 
-# ----- PROXY ----- #
+# ----- REDIS ----- #
 
 redis_pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT)
 

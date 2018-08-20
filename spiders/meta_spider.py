@@ -46,8 +46,7 @@ def spide_group_meta():
                     "origin_url": meta["url"],
                     "nos_key": "",
                     "nos_url": "",
-                    "local_file_path": "",
-                    "finish": False
+                    "local_file_path": ""
                 }
                 origin_meta = [new_meta_unit] + origin_meta
                 counter += 1
@@ -84,6 +83,7 @@ def single_spide_group(group_id):
             if group_info["id"] not in origin_img_index_set:  # 不在原来的数据里，添加
                 new_image_info = {
                     "id": group_info["id"],
+                    "group_id": group_id,
                     "origin_url": group_info["url"],
                     "nos_key": "",
                     "nos_url": "",
@@ -118,7 +118,6 @@ def spide_group(group_meta):
 def main():
     group_meta = spide_group_meta()
     spide_group(group_meta)
-    # modify_meta_finish()
 
 
 if __name__ == "__main__":
