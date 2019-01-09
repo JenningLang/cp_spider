@@ -8,3 +8,4 @@ config.py
 data/logs/
 *.log
 *.JPG
+*.sqlite3

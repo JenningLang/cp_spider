@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> {{ id }} </title>
+    <!--
+    <link rel="stylesheet" type="text/css" href="./style.css">
+    -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="always">
+            <div class="row title" >
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                Cosplay
+                </div>
+            </div>
+            <div class="row index" >
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    {% for idx in row_list %}
+                        <a href="#{{idx}}"> {{ idx }} </a>
+                    {% endfor %}
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="content">
+            {% for meta_group in meta_data %}
+            <div class="row">
+                <a name="{{ meta_group.name }}"></a>
+                {% for meta in meta_group.data %}
+                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 grid-img-grid">
+                    <img class="grid-img img-rounded" src="{{ meta.origin_url }}"/>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="row">
+            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 load-more">
+            加载更多
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+    var group_id = "{{ id }}";
+    var default_next_row_idx = {{ next_row_idx }};
+    var next_row_idx = -1;
+    $(document).ready(function(){
+        $(".load-more").click(function(){
+            if(next_row_idx == -1){
+                next_row_idx = default_next_row_idx;
+            }
+            $.get("/display/group_data?id=" + next_row_idx + "&group_id=" + group_id, function(data, status){
+                for(var i = next_row_idx; i < data.next_row_idx; i++){
+                    var data_triple = data.meta_data[i - next_row_idx].data;
+                    var name = data.meta_data[i - next_row_idx].name;
+
+                    var append_html = ""
+                    append_html += '<div class="row"><a name="' + name + '"></a>';
+                    for(var j in data_triple){
+                        img_info = data_triple[j];
+                        append_html += '<div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 grid-img-grid">';
+                        append_html += '<img class="grid-img img-rounded"';
+                        append_html += 'src="' + img_info.origin_url + '"/>';
+                        append_html += '</div>';
+                    }
+                    append_html += '</div>'
+                    $(".content").append(append_html);
+                }
+                next_row_idx = data.next_row_idx;
+                if(next_row_idx == -2){
+                    $(".load-more").text("没有更多了！");
+                    $(".load-more").unbind("click");
+                }
+            });
+        });
+    });
+    function css_on_load(){
+        w_width = $(".container").width() + 30;
+        $(".always").width(w_width);
+        $(".load-more").width(w_width);
+    }
+    css_on_load();
+</script>
+
+<style>
+.grid-img-grid{
+    padding-left: 0;
+    padding-right: 0;
+}
+.grid-img {
+    max-width: 100%;
+    max-height: 100%;
+}
+.grid-img:hover {
+    max-width: 100%;
+    max-height: 100%;
+    border: #dd81ee 2px solid!important;
+    box-shadow: 0 0 8px #dd81ee;
+}
+.title{
+    font-size: 60px;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    color: #dd81ee;
+    font-weight: bold;
+    font-family: Impact;
+    background: white;
+}
+.index{
+    background: white;
+}
+.always{
+    position:fixed;
+    top:0;
+    z-index: 99;
+    background: white;
+}
+.content{
+    margin-top: 200px;
+}
+.load-more{
+    font-size: 32px;
+    margin-top: 20px;
+    margin-bottom: 100px;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: center;
+    cursor: pointer;
+}
+</style>
